@@ -18,8 +18,22 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        h1 {
+        .title-with-images {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
             text-align: center;
+        }
+        .title-with-images img {
+            width: 70px;
+            height: auto;
+        }
+        .title-with-images h1 {
+            flex: 1;
+            text-align: center;
+            margin: 0;
             color: #b22222;
         }
         .subtitle {
@@ -27,6 +41,7 @@
             color: #333;
             text-align: center;
             margin-top: 5px;
+            margin-bottom: 20px;
         }
         label {
             display: block;
@@ -61,8 +76,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>Estación de Bomberos de Siguatepeque</h1>
+        <div class="title-with-images">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXeh4MlNmjJ7PwjqujKMRhimvnzQ-2pjp8H70lnSPOcWSKw-ztZxfGxFEthup1jd5p-lA&usqp=CAU" alt="Logo Izquierda">
+            <h1>Estación de Bomberos de Siguatepeque</h1>
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXeh4MlNmjJ7PwjqujKMRhimvnzQ-2pjp8H70lnSPOcWSKw-ztZxfGxFEthup1jd5p-lA&usqp=CAU" alt="Logo Derecha">
+        </div>
         <div class="subtitle">Datos de Certificación OTPSCI</div>
+
         <form id="certificationForm">
             <label for="empresa">Nombre de la Empresa:</label>
             <input type="text" id="empresa" name="empresa" required>
@@ -85,8 +105,9 @@
             <label for="inspectores">Nombre del Inspector(es):</label>
             <input type="text" id="inspectores" name="inspectores" required>
 
-            <button type="button" onclick="procesarFormulario()">Generar QR y Enviar</button>
+            <button type="button" onclick="procesarFormulario()">Generar QR y Descargar</button>
         </form>
+
         <div id="qrcode"></div>
     </div>
 
@@ -109,7 +130,6 @@
                 return;
             }
 
-            // Datos del formulario
             const data = {
                 empresa: document.getElementById('empresa').value,
                 rubro: document.getElementById('rubro').value,
@@ -120,18 +140,12 @@
                 inspectores: document.getElementById('inspectores').value
             };
 
-            // ----------------------
-            // 1. Enviar por EmailJS
-            // ----------------------
+            // Enviar correo con EmailJS
             emailjs.send("service_2b2ic5t","template_co2q6n8", data)
-            .then(() => {
-                console.log("✅ Correo enviado");
-            })
-            .catch(err => console.error("❌ Error al enviar correo:", err));
+                .then(() => console.log("✅ Correo enviado"))
+                .catch(err => console.error("❌ Error al enviar correo:", err));
 
-            // ----------------------
-            // 2. Generar QR con URL
-            // ----------------------
+            // Generar QR
             const queryString = encodeURIComponent(JSON.stringify(data));
             const qrUrl = window.location.origin + window.location.pathname + "?data=" + queryString;
 
@@ -140,13 +154,19 @@
             qrcodeDiv.innerHTML = "";
 
             QRCode.toCanvas(document.createElement("canvas"), qrUrl, { width: 200 }, function (err, canvas) {
-                if (!err) qrcodeDiv.appendChild(canvas);
+                if (err) return console.error(err);
+
+                qrcodeDiv.appendChild(canvas);
+
+                // Descargar automáticamente
+                const link = document.createElement("a");
+                link.href = canvas.toDataURL("image/png");
+                link.download = `Certificado_${data.empresa}.png`;
+                link.click();
             });
         }
 
-        // ----------------------
-        // 3. Si se escanea el QR
-        // ----------------------
+        // Mostrar certificado si se escanea el QR
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             if (params.has("data")) {
